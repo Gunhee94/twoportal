@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.StaffDao">
+
+
+<select id="getStaffById" parameterType="String" resultType="Staff">
+	
+	select 
+		staff_no			as no,
+		staff_id			as id,
+		staff_pwd			as pwd,
+		staff_name			as name,
+		staff_phoneNumber	as phoneNumber,
+		staff_email			as email,
+		staff_address		as address,
+		staff_hiredate		as hiredate,
+		staff_access		as access
+	from
+		school_staffs
+	where
+		staff_id = #{value}
+</select>
+</mapper>

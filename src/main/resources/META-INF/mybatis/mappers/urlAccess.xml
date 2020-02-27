@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.UrlAccessDao">
+
+	<select id="getAccessByMap" parameterType="map" resultType="UrlAccess">
+		select 
+			access_no  no,
+			url_no	   urlNo,
+			access	   access
+		from
+			school_access
+		where
+			url_no = #{urlNo}
+		and
+			access = #{job}
+	</select>
+</mapper>

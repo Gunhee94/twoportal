@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.StudentDao">
+
+	<select id="countStudentPage" parameterType="map"  resultType="int">
+        SELECT
+	           count(*)
+        FROM
+             school_students
+        where
+        	1=1
+        <if test="year != null">
+			and year(stu_admission_date) = #{year}
+		</if>
+		<if test="department != null and department != 0">
+			and dept_no = #{department}
+		</if>
+		<if test="grade != null and grade != 0">
+			and stu_grade = #{grade}
+		</if>
+		<if test="studentName != null">
+			and stu_name like CONCAT('%',#{studentName},'%')
+		</if>
+		
+	</select>
+	
+	<select id="selectStudentPage" parameterType="Criteria" resultType="Student">
+	       select 
+			stu_no				as no,
+			stu_name			as name,
+			stu_id				as id,
+			stu_pwd				as pwd,
+			stu_age				as age,
+			stu_status			as status,
+			stu_grade			as grade,
+			stu_admission_date	as admission,
+			stu_graduated_date	as graduated, 
+			stu_checked_pwd		as checkedPwd, 
+			stu_address			as address,
+			stu_email			as email,
+			stu_phone			as phone,
+			stu_bank_name		as bankName, 
+			stu_account_number	as accountNumber,
+			dept_no				as deptNo,
+			stu_image			as imageName
+		from
+			school_students
+	        ORDER BY stu_no desc
+	        LIMIT #{pageStart}, #{perPageNum}
+
+	</select>
+
+
+	<select id="getStudentById" parameterType="string" resultType="Student">
+		select 
+			stu_no				as no,
+			stu_name			as name,
+			stu_id				as id,
+			stu_pwd				as pwd,
+			stu_age				as age,
+			stu_status			as status,
+			stu_grade			as grade,
+			stu_admission_date	as admission,
+			stu_graduated_date	as graduated, 
+			stu_checked_pwd		as checkedPwd, 
+			stu_address			as address,
+			stu_email			as email,
+			stu_phone			as phone,
+			stu_bank_name		as bankName, 
+			stu_account_number	as accountNumber,
+			dept_no				as deptNo,
+			stu_image			as imageName
+		from
+			school_students
+		where
+			stu_id = #{value}
+	</select>
+	<!-- 학생 번호로 학생과가 포함된 학생찾기 -->
+	<select id="getStudentJoinDeptByNo" parameterType="int" resultType="DeptStudentDto">
+		select 
+			A.stu_no				as no,
+			A.stu_name			as name,
+			A.stu_id				as id,
+			A.stu_pwd				as pwd,
+			A.stu_age				as age,
+			A.stu_status			as status,
+			A.stu_grade			as grade,
+			A.stu_admission_date	as admission,
+			A.stu_graduated_date	as graduated, 
+			A.stu_checked_pwd		as checkedPwd, 
+			A.stu_address			as address,
+			A.stu_email			as email,
+			A.stu_phone			as phone,
+			A.stu_bank_name		as bankName, 
+			A.stu_account_number	as accountNumber,
+			A.stu_access			as stuAccess,
+			A.dept_no				as deptNo,
+			B.dept_name				as deptName,
+			A.stu_image			as imageName
+		from
+			school_students A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		and
+			stu_no = #{value}
+	</select>
+	<!-- 학생번호로 학생 과명을 제외한 학생찾기 -->
+	<select id="getStudentByNo" parameterType="int" resultType="Student">
+		select 
+			stu_no				as no,
+			stu_name			as name,
+			stu_id				as id,
+			stu_age				as age,
+			stu_status			as status,
+			stu_grade			as grade,
+			stu_admission_date	as admission,
+			stu_graduated_date	as graduated, 
+			stu_checked_pwd		as checkedPwd, 
+			stu_address			as address,
+			stu_email			as email,
+			stu_phone			as phone,
+			stu_bank_name		as bankName, 
+			stu_account_number	as accountNumber,
+			dept_no				as deptNo,
+			stu_image			as imageName
+		from
+			school_students
+		where
+			stu_no = #{value}
+	</select>
+	
+	<select id="getAllStudent" resultType="Student">
+		select 
+			A.stu_no				as no,
+			A.stu_name			as name,
+			A.stu_id				as id,
+			A.stu_pwd				as pwd,
+			A.stu_age				as age,
+			A.stu_status			as status,
+			A.stu_grade			as grade,
+			A.stu_admission_date	as admission,
+			A.stu_graduated_date	as graduated, 
+			A.stu_checked_pwd		as checkedPwd, 
+			A.stu_address			as address,
+			A.stu_email			as email,
+			A.stu_phone			as phone,
+			A.stu_bank_name		as bankName, 
+			A.stu_account_number	as accountNumber,
+			A.dept_no				as deptNo,
+			B.dept_name				as 'Department.name',
+			A.stu_image			as imageName
+		from
+			school_students A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		order by stu_no desc	
+	</select>
+	<select id="getMyPageForm" parameterType="int" resultType="studentMypageDto"> 
+		select	
+			A.stu_no				as no,
+			A.stu_name				as name,
+			A.stu_id				as id,
+			A.stu_pwd				as pwd,
+			A.stu_age				as birthDay,
+			A.stu_status			as status,
+			A.stu_grade				as grade,
+			A.stu_address			as address,
+			A.stu_email				as email,
+			A.stu_phone				as phone,
+			A.stu_bank_name			as bankName, 
+			A.stu_account_number	as accountNumber,
+			B.dept_name				as deptName,
+			A.stu_image				as imageName
+		from
+			school_students A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		and
+			A.stu_no = #{value}
+	</select>
+	<!-- 지정된 학생 정보로 학생(들) 찾기 -->
+	<select id="getAllStudentByCri" parameterType="map" resultType="DeptStudentDto">
+		select 
+			A.stu_no				as no,
+			A.stu_name			as name,
+			A.stu_id				as id,
+			A.stu_pwd				as pwd,
+			A.stu_age				as age,
+			A.stu_status			as status,
+			A.stu_grade			as grade,
+			A.stu_admission_date	as admission,
+			A.stu_graduated_date	as graduated, 
+			A.stu_checked_pwd		as checkedPwd, 
+			A.stu_address			as address,
+			A.stu_email			as email,
+			A.stu_phone			as phone,
+			A.stu_bank_name		as bankName, 
+			A.stu_account_number	as accountNumber,
+			A.dept_no				as deptNo,
+			B.dept_name				as deptName,
+			A.stu_image			as imageName
+		from
+			school_students A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		<if test="year != null">
+			and year(A.stu_admission_date) = #{year}
+		</if>
+		<if test="department != null and department != 0">
+			and A.dept_no = #{department}
+		</if>
+		<if test="grade != null and grade != 0">
+			and A.stu_grade = #{grade}
+		</if>
+		<if test="studentName != null">
+			and A.stu_name like CONCAT('%',#{studentName},'%')
+		</if>
+		
+		order by stu_no desc
+		
+		 LIMIT #{pageStart}, #{perPageNum}
+	</select>
+	
+	<select id="getNotDayCheckedStudents" parameterType="int" resultType="Student">
+		select
+			A.stu_name 	  name
+		from 
+			school_students A,
+			school_student_lecture_list B
+		where 
+			B.lect_no = #{value}
+		and 
+			A.stu_no = B.stu_no 
+		and 
+			A.stu_no not in (
+				select C.stu_no
+				from
+					school_student_daychecks A, school_student_lecture_list B, school_students C
+				WHERE	
+					B.lect_no = #{value}
+				AND
+					C.stu_no = B.stu_no
+				and
+					B.lecture_list_no = A.lecture_list_no
+				AND
+					A.daycheck_create_date > CURDATE()
+			)
+	</select>
+	
+	<select id="getDayCheckedStudents" parameterType="int" resultType="Student">
+		select
+			C.stu_name name
+		from
+			school_student_daychecks A,
+			school_student_lecture_list B, 
+			school_students C
+		WHERE	
+			B.lect_no = #{value}
+		AND
+			C.stu_no = B.stu_no
+		and
+			B.lecture_list_no = A.lecture_list_no
+		AND
+			A.daycheck_create_date > CURDATE()
+	</select>
+	<!-- 학생 추가하기  -->
+	<insert id="addOneStudent" parameterType="Student">
+		insert into school_students
+		(stu_name, stu_id, stu_pwd, stu_age, stu_status, stu_grade, stu_checked_pwd, stu_address, stu_email, stu_phone, stu_bank_name, stu_account_number, dept_no, stu_access, stu_image)
+		values
+		(#{name}, #{id}, #{pwd}, #{age}, '재학중', #{grade}, 'N',#{address}, #{email}, #{phone}, #{bankName}, #{accountNumber}, #{deptNo}, 'student', #{imageName})
+	</insert>
+	
+	<update id="updateStudentInfo" parameterType="Student">
+		update school_students 
+		set
+			stu_name = #{name},
+			stu_id	= #{id},
+			stu_age = #{age},
+			stu_status = #{status},
+			stu_grade = #{grade},
+			stu_checked_pwd = #{checkedPwd},
+			stu_address = #{address},
+			stu_email = #{email},
+			stu_phone = #{phone},
+			stu_bank_name = #{bankName},
+			stu_account_number = #{accountNumber},
+			stu_image = #{imageName}
+		where
+			stu_no = #{no}	
+	</update>
+	
+	<update id="updateStudentMypageForm" parameterType="Student">
+		update school_students 
+		set
+			stu_pwd = #{pwd},
+			stu_address = #{address},
+			stu_email = #{email},
+			stu_phone = #{phone},
+			stu_bank_name = #{bankName},
+			stu_account_number = #{accountNumber}
+			<if test="imageName !=null">
+			,
+				stu_image = #{imageName}
+			</if>
+		where
+			stu_no = #{no}	
+	</update>
+	<delete id="deleteStudent" parameterType="int">
+		DELETE FROM school_students
+		where stu_no = #{value}
+	</delete>
+</mapper>

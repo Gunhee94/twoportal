@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.ExamDao">
+	
+	<!-- 학생 시험 체크내역에 추가하기-->
+	<insert id="insertStudentCheck" parameterType="TestStudentCheck">
+		insert into school_test_studentcheck
+		(stu_no, test_no, test_question_studentCheck, test_correct, test_info_no)
+		values
+		(#{stuNo}, #{testNo}, #{questionStudentCheck}, 'N', #{testInfoNo})
+	</insert>
+	
+	<!-- 학생 시험 체크내역으로 점수 계산하기 : 필요파라미터는 학생번호, testInfoNo-->
+	<select id="getTestScoreByStudentCheck" parameterType="TestStudentCheck" resultType="int">
+		select (count(*))*5
+		from
+			school_test_studentcheck
+		where
+			stu_no = #{stuNo}
+			and test_info_no = #{testInfoNo}
+			and test_correct = 'Y'
+	</select>
+	
+	<!-- 정답이면 전체를 Y로 바꾸는 쿼리 (파라미터 필요없이 테이블전체를 비교해서 업데이트한다.)-->
+	<update id="checkAllAnswers">
+		update
+			school_test_studentcheck A inner join school_test_questions B
+		on
+			A.test_info_no = B.test_info_no
+			and A.test_no = B.test_no
+		set
+			A.test_correct = 'Y'
+		where
+			B.test_question_answer = A.test_question_studentcheck
+	</update>
+	
+	<!-- 시험결과 테이블에 저장하는 쿼리 : 필요파라미터는 학생번호, testInfoNo, testScore -->
+	<insert id="insertStudentScoreByTestStudentCheck" parameterType="map">
+		insert into school_test_results
+		(stu_no, test_info_no, test_score)
+		values
+		(#{stuNo}, #{testInfoNo}, #{testScore})
+	</insert>
+</mapper>

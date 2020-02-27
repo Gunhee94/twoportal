@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.ProfessorDao">
+
+	<select id="getProFessorById" parameterType="String" resultType="Professor">
+		select 
+			pro_no 			as no,
+			pro_name		as name,
+			pro_id 			as id,
+			pro_pwd 		as pwd,
+			pro_position 	as position,
+			pro_create_date as createDate,
+			pro_image       as imageName,
+			dept_no 		as deptNo,
+			pro_access 		as access,
+			pro_email		as email
+		from
+			school_professors
+		where
+			pro_id = #{id}
+			
+	</select>
+	
+	<select id="getProFessorByNo" parameterType="int" resultType="Professor">
+		select 
+			pro_no 			as no,
+			pro_name		as name,
+			pro_id 			as id,
+			pro_position 	as position,
+			pro_create_date as createDate,
+			pro_image       as imageName,
+			dept_no 		as deptNo,
+			pro_access 		as access,
+			pro_email		as email
+		from
+			school_professors
+		where
+			pro_no = #{no}
+	</select>
+	
+	<!-- 건희 !!!!!!!!!!!!!!!!!!!! -->
+
+	<select id="getProfessorByProNo" parameterType="int" resultType="DeptProfessorDto">
+		select 
+			A.pro_no 			no,
+			A.pro_name			name,
+			A.pro_id 			id,
+			A.pro_position 		position,
+			A.pro_create_date 	createDate,
+			A.pro_image       	imageFileName,
+			B.dept_name 		deptName,
+			A.pro_access 		access,
+			A.pro_email			email,
+			A.pro_pwd			proPwd 
+		from
+			school_professors A, school_departments B
+		where
+			A.dept_no = B.dept_no
+			and A.pro_no = #{value}
+	</select>
+	<!-- 건희 추가 끝!!!!!!!!!!!!!!!!!!!!!! -->
+	
+	<select id="getProfessors" parameterType="map" resultType="DeptProfessorDto">
+		select 
+		distinct 
+			A.pro_no 			as no,
+			A.pro_name		as name,
+			A.pro_id 			as id,
+			A.pro_position 	as position,
+			A.pro_create_date as createDate,
+			A.pro_image       as imageName,
+			B.dept_name 		as deptName,
+			A.pro_access 		as access,
+			A.pro_email		as email
+		from
+			school_professors A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		<if test="deptNo != null and deptNo != 0">
+			and A.dept_no = #{deptNo}
+		</if>
+		<if test="position != null and position !=''" >
+			and A.pro_position = #{position}
+		</if>
+		<if test="proName != null and proName != ''">
+			and A.pro_name like CONCAT('%',#{proName},'%')
+		</if>
+		order by A.pro_no desc
+		
+		 LIMIT #{pageStart}, #{perPageNum}
+	</select>
+	
+	<select id="totalCountProfessors" parameterType="map" resultType="int">
+		select
+			count(*)
+		from
+			school_professors
+		where
+			1=1
+		<if test="deptNo != null and deptNo != 0">
+			and dept_no = #{deptNo}
+		</if>
+		<if test="position != null and position !=''" >
+			and pro_position = #{position}
+		</if>
+		<if test="proName != null and proName != ''">
+			and pro_name like CONCAT('%',#{proName},'%')
+		</if>
+		
+	</select>
+	
+	<select id="getProfessorDetailInfo" parameterType="int" resultType="DetailProfessorDto">
+		select 
+			A.pro_no 			as no,
+			A.pro_name		as name,
+			A.pro_id 			as id,
+			A.pro_position 	as position,
+			A.pro_create_date as createDate,
+			A.pro_image       as imageName,
+			A.dept_no			as	deptNo,
+			B.dept_name 		as deptName,
+			A.pro_access 		as access,
+			A.pro_email		as email,
+			A.pro_bank_name	as	bankName,
+			A.pro_account_number as accountNumber
+		from
+			school_professors A, school_departments B
+		where
+			A.dept_no = B.dept_no
+		and
+			A.pro_no = #{value}
+			
+	</select>
+	
+	<insert id="addProfessor" parameterType="Professor">
+		insert into school_professors
+		(pro_name, pro_id, pro_pwd, pro_position, pro_image, dept_no , pro_access, pro_email, pro_bank_name, pro_account_number)
+		values
+		(#{name}, #{id}, #{pwd}, #{position}, #{imageName}, #{deptNo}, 'professor', #{email}, #{bankName}, #{accountNumber})
+	</insert>
+	
+	<update id="updateProfessorInfo" parameterType="Professor">
+		update school_professors
+		set
+			pro_name		= #{name},
+			pro_id 			= #{id},
+			pro_position 	= #{position},
+			pro_create_date = #{createDate},
+			pro_image       = #{imageName},
+			dept_no 		= #{deptNo},
+			pro_access 		= #{access},
+			pro_email		= #{email},
+			pro_bank_name	= #{bankName},
+			pro_account_number = #{accountNumber}	
+		where
+			pro_no = #{no}
+	</update>
+	
+	<delete id="deleteProfessor" parameterType="int">
+		Delete from school_professors
+		where pro_no = #{value}
+	</delete>
+	
+</mapper>

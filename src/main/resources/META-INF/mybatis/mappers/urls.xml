@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.UrlsDao">
+	
+	<select id="getUrlsByMainNo" parameterType="int" resultType="Urls">
+		select				
+			url_no				as no,
+			url					as url,
+			url_required_login	as requiredLogin,
+			sub_category_title	as subCateTitle,
+			main_menu_no		as mainMenuNo
+		from
+			school_urls
+		where
+			main_menu_no = #{value}
+	</select>
+	
+	<select id="getUrlByUrl" parameterType="String" resultType="Urls">
+		select				
+			url_no				as no,
+			url					as url,
+			url_required_login	as requiredLogin,
+			sub_category_title	as subCateTitle,
+			main_menu_no		as mainMenuNo
+		from
+			school_urls
+		where
+			url = #{value}
+	</select>
+</mapper>

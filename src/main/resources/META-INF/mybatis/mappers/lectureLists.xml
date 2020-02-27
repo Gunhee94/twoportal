@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureListDao">
+
+	<!-- 수강신청 table에 데이터 저장 -->
+	<insert id="insertLectureTable" parameterType="LectureList">
+		insert into school_student_lecture_list
+		(lect_no, stu_no, lecture_list_create_date)
+		values
+		(#{lectNo}, #{stuNo}, now())
+	</insert>
+	
+	<select id="getLectureListByLecNo" parameterType="int" resultType="LectureList">
+		select
+			lecture_list_no				no,
+			lect_no						lectNo,
+			stu_no						stuNo,
+			lecture_list_create_date	createDate
+		from
+			school_student_lecture_list
+		where
+			lect_no = #{value}
+	
+	</select>
+	
+	<select id="getLectureListBylectstuNos" parameterType="LectureList" resultType="LectureList">
+		select
+			lecture_list_no				no,
+			lect_no						lectNo,
+			stu_no						stuNo,
+			lecture_list_create_date	createDate
+		from
+			school_student_lecture_list
+		where
+			lect_no = #{lectNo}
+		and
+			stu_no = #{stuNo}
+	</select>
+	
+	<!-- JH : 조건으로 수강신청할 강의목록 검색 (수강신청/장바구니) -->
+	<select id="getLectureListByMajorAndDeptNoAndYear" parameterType="map" resultType="RegisterListDto">
+		select
+			A.subject_no			subNo,
+			A.subject_name			subName,
+			A.dept_no				deptNo,
+			A.subject_credit		credit,
+			A.subject_major			major,
+			A.subject_target_year	targetYear,
+			B.lect_place			place,
+			B.lect_room				room,
+			B.lect_total_number		totalNumber,
+			B.lect_no				lectNo,
+			C.pro_name				proName,
+			D.lect_time_no			lectTimeNo,
+			D.lect_day				lectDay,
+			D.lect_period1			firstPeriod,
+			D.lect_period2			secondPeriod,
+			D.lect_period3			thirdPeriod,
+			(select ifnull(B.lect_no, 0)
+			from school_student_lecture_list X
+			where X.stu_no = #{stuNo}
+			and B.lect_no = X.lect_no)	registeredLectNo,
+			(select distinct ifnull(B.lect_no, 0)
+			from school_student_lecture_cart Y
+			where Y.stu_no = #{stuNo}
+			and B.lect_no = Y.lect_no) existInCart
+		from
+			school_subjects A, school_lectures B, school_professors C, school_lecture_time D
+		where
+			A.subject_no = B.subject_no
+			and B.lect_no = D.lect_no
+			and B.pro_no = C.pro_no
+			and A.dept_no = #{dept}
+			and A.subject_target_year = #{year}
+			and B.lect_status = '허용'
+			<if test="ismajor != '전체'">
+				and A.subject_major = #{ismajor}
+			</if>
+		order by
+			subject_name asc
+	</select>
+	
+	<!-- JH : 수강신청내역 DB에 넣기 (수강신청) -->
+	<insert id="insertOneLecture" parameterType="LectureList">
+		insert into school_student_lecture_list
+		(lect_no, stu_no, lecture_list_create_date)
+		values
+		(#{lectNo}, #{stuNo}, now())
+	</insert>
+
+	<!-- JH : 학생번호로 수강내역 불러오기 (수강신청) -->
+	<select id="getLectureListByStuNo" parameterType="int" resultType="RegisterListDto">
+		select
+			A.subject_no				subNo,
+			A.subject_name				subName,
+			A.dept_no					deptNo,
+			A.subject_credit			credit,
+			A.subject_major				major,
+			A.subject_target_year		targetYear,
+			B.lect_place				place,
+			B.lect_room					room,
+			B.lect_total_number			totalNumber,
+			B.lect_no					lectNo,
+			C.pro_name					proName,
+			D.lecture_list_create_date	createDate,
+			B.lect_create_date			lectCreateDate,
+			B.lect_semester				semester
+		from
+			school_subjects A, school_lectures B, school_professors C, school_student_lecture_list D
+		where
+			A.subject_no = B.subject_no
+			and B.pro_no = C.pro_no
+			and B.lect_status = '허용'
+			and B.lect_no = D.lect_no
+			and D.stu_no = #{value}
+		order by
+			subject_name asc
+	</select>
+	
+	<!-- JH : 학생번호로 총신청과목,신청학점 불러오기 (수강신청) -->
+	<select id="getSubCountAndCreditCountByStuNo" parameterType="int" resultType="RegisteredCountDto">
+		select  
+			count(*) subCount,
+			sum(
+				case 
+					when C.subject_major = '전공' then 3
+					when C.subject_major = '교양' then 2
+				end
+			) creditCount
+		from
+			school_student_lecture_list A, school_lectures B , school_subjects C
+		where
+			A.stu_no = 50000
+			and A.lect_no = B.lect_no
+			and B.subject_no = C.subject_no
+	</select>
+	
+	<!-- JH : 학생번호와 강의번호로 수강리스트에 있는 과목 한개 삭제하기 (수강신청) -->
+	<delete id="deleteOneLecture" parameterType="map">
+		delete from school_student_lecture_list
+		where
+			lect_no = #{lectNo}
+			and stu_no = #{stuNo}
+	</delete>
+		
+	<!-- JH : 담기버튼 클릭시 장바구니 테이블에 담기 (장바구니) -->
+	<insert id="insertOneCart" parameterType="RegisterCartDto">
+		insert into school_student_lecture_cart
+		(subject_no, lect_no, stu_no, lect_time_no)
+		values
+		(#{subNo}, #{lectNo}, #{stuNo}, #{lectTimeNo})
+	</insert>
+	
+	<!-- JH : 강의번호로 과목번호 알아내기 -->
+	<select id="getSubNoAndLectTimeNoByLectNo" parameterType="int" resultType="SubNoAndLectTimeNo">
+		select
+			C.lect_time_no			lectTimeNo,
+			B.subject_no			subNo
+		from
+			school_lectures A, school_subjects B, school_lecture_time C
+		where
+			A.subject_no = B.subject_no
+			and A.lect_no = C.lect_no
+			and A.lect_no = #{value}
+	</select>
+	
+	<!-- JH : 강의하나선택시 요일,시간표 불러오기 (장바구니) -->
+	<select id="getLectureInfoByLectNo" parameterType="int" resultType="CartDayAndTime">
+		select
+			A.lect_no			lectNo,
+			B.lect_time_no		lectTimeNo,
+			B.lect_day			lectDay,
+			B.lect_period1		firstPeriod,
+			B.lect_period2		secondPeriod,
+			B.lect_period3		thirdPeriod
+		from
+			school_lectures A, school_lecture_time B
+		where
+			A.lect_no = B.lect_no
+			and A.lect_no = #{value}
+	</select>
+	
+	<!-- JH : 학생 번호로 장바구니목록 불러오기 (장바구니) -->
+	<select id="getCartListByStuNo" parameterType="int" resultType="RegisterListDto">
+		select distinct
+			A.subject_major		major,
+			A.subject_name		subName,
+			A.subject_credit	credit,
+			B.lect_total_number	totalNumber,
+			C.pro_name			proName,
+			B.lect_no			lectNo,
+			E.lect_time_no		lectTimeNo,
+			E.lect_day			lectDay,
+			E.lect_period1		firstPeriod,
+			E.lect_period2		secondPeriod,
+			E.lect_period3		thirdPeriod
+		from
+			school_subjects A, school_lectures B, school_professors C, school_student_lecture_cart D, school_lecture_time E
+		where
+			A.subject_no = B.subject_no
+			and B.pro_no = C.pro_no
+			and D.lect_no = B.lect_no
+			and B.lect_no = E.lect_no
+			and D.stu_no = #{value}
+	</select>
+		
+	<!-- JH : 학생번호와 강의번호로 장바구니에 있는 강의1개 삭제하기 (장바구니) -->
+	<delete id="deleteOneCart" parameterType="map">
+		delete from school_student_lecture_cart
+		where
+			lect_no = #{lectNo}
+			and stu_no = #{stuNo}
+	</delete>
+	
+	<select id="getLecturListsByLectNo" parameterType="int" resultType="LectureList">
+		select
+			lecture_list_no				no,
+			lect_no						lectNo,
+			stu_no						stuNo,
+			lecture_list_create_date	createDate
+		from
+			school_student_lecture_list
+		where
+			lect_no = #{value}
+	</select>
+	
+	<select id="getLecturListByListNo" parameterType="int" resultType="LectureList">
+		select
+			lecture_list_no				no,
+			lect_no						lectNo,
+			stu_no						stuNo,
+			lecture_list_create_date	createDate
+		from
+			school_student_lecture_list
+		where
+			lecture_list_no = #{value}
+	</select>
+
+</mapper>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.GradeResultDao">
+
+	<select id="getGradeResultBycri" parameterType="map" resultType="GradeLectureDto">
+		select
+			A.lect_create_date		lectCreateDate,
+			A.lect_semester			lectSemester,
+			C.dept_no				deptNo,
+			C.dept_name				deptName,
+			B.subject_no			subNo,
+			B.subject_name			subName,
+			E.stu_grade				stuGrade,
+			E.stu_id				stuId,
+			E.stu_name				stuName,
+			F.grade_score			gradeScore,
+			F.grade_rating			gradeRating,
+			F.grade_rank			gradeRank
+		from school_lectures A, school_subjects B, school_departments C, school_student_lecture_list D, school_students E, school_grade_results F  
+		where A.subject_no = B.subject_no
+			and B.dept_no = C.dept_no
+			and A.lect_no = D.lect_no
+			and D.stu_no = E.stu_no
+			and D.lecture_list_no = F.lecture_list_no
+			<if test="year != null">
+				and year(A.lect_create_date) = #{year}
+			</if>				
+			<if test="semester != null and semester != 0">
+				and A.lect_semester = #{semester}
+			</if>
+			<if test="deptNo != null and deptNo != 0">
+				and C.dept_no = #{deptNo}
+			</if>
+			<if test="subjectNo != null and subjectNo != 0">
+				and B.subject_no = #{subjectNo}
+			</if>
+			<if test="proNo != 0">
+				and A.pro_no = #{proNo}			  
+			</if>		
+		<if test="order == 'false'">
+			order by F.grade_score desc		  
+		</if>		
+		<if test="order == 'true'">
+			order by F.grade_score asc		  
+		</if>
+		<if test="pageStart != null">
+			LIMIT #{pageStart}, #{perPageNum}	
+		</if>
+	</select>
+	
+	<select id="getCountGradeResultBycri" parameterType="map" resultType="int">
+		select
+			count(*)
+		from school_lectures A, school_subjects B, school_departments C, school_student_lecture_list D, school_students E, school_grade_results F  
+		where A.subject_no = B.subject_no
+			and B.dept_no = C.dept_no
+			and A.lect_no = D.lect_no
+			and D.stu_no = E.stu_no
+			and D.lecture_list_no = F.lecture_list_no
+			<if test="year != null">
+				and year(A.lect_create_date) = #{year}
+			</if>				
+			<if test="semester != null and semester != 0">
+				and A.lect_semester = #{semester}
+			</if>
+			<if test="deptNo != null and deptNo != 0">
+				and C.dept_no = #{deptNo}
+			</if>
+			<if test="subjectNo != null and subjectNo != 0">
+				and B.subject_no = #{subjectNo}
+			</if>
+			<if test="proNo != 0">
+				and A.pro_no = #{proNo}			  
+			</if>		
+		<if test="order == 'false'">
+			order by F.grade_score desc		  
+		</if>		
+		<if test="order == 'true'">
+			order by F.grade_score asc		  
+		</if>	
+	</select>
+
+
+	<select id="getAllIsLectureGradeByProNo" parameterType="int" resultType="LectureAndGradeDto">
+		select 
+			A.grade_no				gradeNo,
+			A.lect_no				lectNo,
+			A.lect_create_date		lectCreateDate,
+			A.lect_semester			lectSemester,
+			A.subject_name			subName
+		from (select
+					X.grade_no,
+					Y.lect_no,
+					Y.lect_create_date,
+					Y.lect_semester,
+					V.subject_name		
+				from school_lectures Y, school_subjects V, school_student_lecture_list Z
+				left join school_grade_results X on Z.lecture_list_no = X.lecture_list_no
+				where Z.lect_no = Y.lect_no
+					and V.subject_no = Y.subject_no
+					and Y.lect_status = '종료'
+					and Y.pro_no = #{value}
+				group by Y.lect_no) A
+		where A.grade_no is null
+	</select>
+	
+	<insert id="insertGrade" parameterType="GradeResult" useGeneratedKeys="true" keyProperty="no">
+		insert into school_grade_results (lecture_list_no, grade_score, grade_rating, grade_rank, grade_final)
+		values (#{lectureListNo}, #{score}, #{rating}, #{rank}, #{finalScore})
+	</insert>
+	
+	<select id="getAllLectureListTestScore" resultType="GradeResult">
+		select 
+			C.lecture_list_no				lectureListNo,
+			D.test_score					score
+		from school_student_lecture_list C
+		left join (select
+					 A.lect_no,
+					 B.stu_no,
+					 B.test_score 
+				from school_test_informations A, school_test_results B 
+				where A.test_info_no = B.test_info_no) D on (C.lect_no, C.stu_no) = (D.lect_no, D.stu_no)
+		where D.lect_no is not null
+	</select>
+	
+	<select id="getTotalScoreRankByLectNo" parameterType="int" resultType="GradeRankDto">
+		select
+			B.lect_no				lectNo,
+			B.lecture_list_no		lectureListNo,
+			A.grade_score 			score,
+			A.grade_no				gradeNo,
+			(select
+				count(*)+1
+			from school_grade_results Z, school_student_lecture_list X
+			where score &lt; grade_score
+				and Z.lecture_list_no = X.lecture_list_no
+				and X.lect_no = #{value}
+			) 						rank
+		from school_grade_results A, school_student_lecture_list B 
+		where A.lecture_list_no = B.lecture_list_no
+			and B.lect_no = #{value}
+		order by A.grade_score desc
+	</select>
+	
+	<select id="getGradeResultByNo" parameterType="int" resultType="GradeResult">
+		select
+			grade_no				no,
+			lecture_list_no			lectureListNo,
+			grade_score				score,	
+			grade_rating			rating,
+			grade_rank				rank,
+			grade_final				finalScore
+		from school_grade_results
+		where grade_no = #{value}
+	</select>
+	
+	<update id="updateGradeResult" parameterType="GradeResult">
+		update
+			school_grade_results
+		set
+			grade_rank = #{rank}
+		where
+			grade_no = #{no}
+	</update>
+	
+</mapper>

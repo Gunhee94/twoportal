@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.TuitionDao">
+
+	<insert id="insertTuition" parameterType="Tuition">
+		insert into school_tuitions(
+			dept_no,	
+			tuition_price,	
+			tuition_quarter,	
+			tuition_year,	
+			tuition_pay_start_date,
+			tuition_pay_end_date,
+			tuition_is_close)
+		value
+			(#{deptNo},#{price},#{quarter},YEAR(now()),#{payStartDate},#{payEndDate},'진행중')
+	</insert>
+
+	<select id="getTuitionByNo" parameterType="int" resultType="Tuition">
+		select 
+			tuition_no				no,
+			dept_no					deptNo,
+			tuition_price			price,
+			tuition_quarter			quarter,
+			tuition_year			year,
+			tuition_pay_start_date	payStartDate,
+			tuition_pay_end_date	payEndDate,
+			tuition_is_close		isClose
+		from
+			school_tuitions
+		where
+			tuition_no = #{value}
+	</select>
+	
+	<select id="getTutionHisDtoByJsonParam" parameterType="Tuition" resultType="TuitionHisDto">
+		select 
+			A.tuition_no												no,
+			A.dept_no													deptNo,
+			CONCAT(FORMAT(A.tuition_price,0),'원')						price,
+			A.tuition_quarter											quarter,
+			A.tuition_year												year,
+			CONCAT(
+				DATE_FORMAT(A.tuition_pay_start_date, '%Y-%m-%d'),
+				'~',
+				DATE_FORMAT(A.tuition_pay_end_date, '%Y-%m-%d')
+				   ) 													as dateToDate,
+			A.tuition_is_close											isClose,
+			B.dept_name													deptName
+		from
+			school_tuitions A, school_departments B
+		WHERE
+			A.dept_no = B.dept_no
+		and
+			A.tuition_year = #{year}
+		and
+			A.tuition_quarter = #{quarter}
+	</select>
+	
+	<select id="getTutionDuplicateCheck" parameterType="Tuition" resultType="Tuition">
+		select 
+			tuition_no				no,
+			dept_no					deptNo,
+			tuition_price			price,
+			tuition_quarter			quarter,
+			tuition_year			year,
+			tuition_pay_start_date	payStartDate,
+			tuition_pay_end_date	payEndDate,
+			tuition_is_close		isClose
+		from
+			school_tuitions
+		where
+			dept_no = #{deptNo}
+		AND
+			tuition_quarter = #{quarter}
+		AND
+			tuition_year = YEAR(now())
+	</select>
+	
+	<select id="getNotClosedTuitionBydeptNo" parameterType="map" resultType="Tuition">
+		select 
+			tuition_no				no,
+			dept_no					deptNo,
+			tuition_price			price,
+			tuition_quarter			quarter,
+			tuition_year			year,
+			tuition_pay_start_date	payStartDate,
+			tuition_pay_end_date	payEndDate,
+			tuition_is_close		isClose
+		from
+			school_tuitions
+		where
+			dept_no = #{deptNo}
+		and
+			tuition_quarter = #{quarter}
+		and
+			tuition_year = YEAR(now())
+		and
+			tuition_is_close = '진행중'
+	
+	</select>
+	
+	<select id="getTuitionPayByStuNo" parameterType="int" resultType="TutionAddForm">
+		select 
+			C.tuition_no										tuitionNo,
+			C.dept_no											deptNo,
+			B.dept_name											deptName,
+			C.tuition_price										payprice,
+			C.tuition_quarter 									quarter,
+			C.tuition_year										year,
+			DATE_FORMAT(C.tuition_pay_start_date,'%Y-%m-%d')	startdatemodify,
+			DATE_FORMAT(C.tuition_pay_end_date,'%Y-%m-%d') 		enddatemodify,
+			C.tuition_is_close									isClose
+		from 
+			school_students A, school_departments B, school_tuitions C 
+		WHERE
+			A.dept_no = B.dept_no
+		and
+			C.dept_no = B.dept_no
+		and 
+			A.stu_no = #{value}
+		and 
+			C.tuition_year = YEAR(now())
+		and
+			now() BETWEEN C.tuition_pay_start_date AND C.tuition_pay_end_date
+			
+		and 
+			C.tuition_no  not in ( 
+									select 
+										tuition_no 
+									from 
+										school_tuition_histories 
+									where 
+										school_tuition_histories.stu_no = #{value}
+									and 
+										school_tuition_histories.tuition_no = C.tuition_no)
+	
+	</select>
+
+	<select id="getIsTuitionPayFake" parameterType="map" resultType="Tuition">
+		select 
+			tuition_no					no,
+			dept_no						deptNo,
+			tuition_price				price,
+			tuition_quarter				quarter,
+			tuition_year				year,
+			tuition_pay_start_date		payStartDate,
+			tuition_pay_end_date		payEndDate,
+			tuition_is_close			isClose
+		from
+			school_tuitions 
+		where
+			tuition_no = #{tuitionNo}
+		and
+			tuition_price = #{payPrice}
+	</select>
+	<update id="TuitionUpdate" parameterType="Tuition">
+		update 
+			school_tuitions
+		set
+			dept_no			       = #{deptNo},
+			tuition_price		   = #{price},
+			tuition_quarter		   = #{quarter},
+			tuition_pay_start_date = #{payStartDate},
+			tuition_pay_end_date   = #{payEndDate},
+			tuition_is_close	   = #{isClose}
+		where
+			tuition_no =#{no}
+	</update>	
+	
+	<delete id="deleteTution" parameterType="int">
+		delete from school_tuitions
+		where
+			tuition_no = #{value}
+			
+	</delete>
+</mapper>

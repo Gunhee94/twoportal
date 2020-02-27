@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.BoardDao">
+	
+	
+	<select id="countBoardList" parameterType="map" resultType="int">
+        SELECT
+	            count(*)
+        FROM
+             school_boards
+       	where 
+		 	board_category = #{category}
+        <if test="searchOption eq 'title'">
+				and board_title like CONCAT('%',#{searchBox},'%')
+			</if>
+			<if test="searchOption eq 'content'">
+				and board_content like CONCAT('%',#{searchBox},'%')
+			</if>
+			<if test="searchOption eq 'titleContent'">
+				and  board_title like CONCAT('%','#{searchBox}','%') or  board_content like CONCAT('%', '#{searchBox}', '%')
+			</if>
+			<if test="dateorview eq 'uploaddate'">
+		        ORDER BY board_create_Date desc
+			</if>	
+			<if test="dateorview eq 'view'">
+		        ORDER BY board_view_count desc
+			</if>	
+	</select>
+	
+	<select id="selectBoardList" parameterType="map" resultType="Board">
+	        SELECT
+	            board_no	as no,
+	            pro_no		as proNo,
+	            staff_no	as staffNo,
+	            stu_no		as stuNo,
+	            guest_nickname	as	guestNickname,
+	            board_title		as	title,
+	            board_content	as	content,
+	            board_create_Date	as createDate,
+	            board_category		as category,
+	            board_view_count	as	viewCount,
+	            board_pwd			as	pwd,
+	            board_pwd_is_input	as pwdIsInput
+	        FROM
+	            school_boards
+	        where 
+				 board_category = #{category}
+			<if test="searchOption eq 'title'">
+				and board_title like CONCAT('%',#{searchBox},'%')
+			</if>
+			<if test="searchOption eq 'content'">
+				and board_content like CONCAT('%',#{searchBox},'%')
+			</if>
+			<if test="searchOption eq 'titleContent'">
+				and  board_title like CONCAT('%','#{searchBox}','%') or  board_content like CONCAT('%', '#{searchBox}', '%')
+			</if>
+			<if test="dateorview eq 'uploaddate'">
+		        ORDER BY board_create_Date desc
+			</if>	
+			<if test="dateorview eq 'view'">
+		        ORDER BY board_view_count desc
+			</if>	
+	        LIMIT #{pageStart}, #{perPageNum}
+
+	</select>
+	
+	<select id="selectBoardListNotParameter" resultType="Board">
+	        SELECT
+	            board_no	as no,
+	            pro_no		as proNo,
+	            staff_no	as staffNo,
+	            stu_no		as stuNo,
+	            guest_nickname	as	guestNickname,
+	            board_title		as	title,
+	            board_content	as	content,
+	            board_create_Date	as createDate,
+	            board_category		as category,
+	            board_view_count	as	viewCount,
+	            board_pwd			as	pwd,
+	            board_pwd_is_input	as pwdIsInput
+	        FROM
+	            school_boards
+	        ORDER BY board_no desc
+	</select>
+	
+	<insert id="insertBoard" parameterType="Board" useGeneratedKeys="true" keyProperty="no">
+		insert into school_boards
+		(
+		<if test="proNo != 0">
+			pro_no, 		
+		</if>
+		<if test="staffNo != 0">
+			staff_no, 		
+		</if>
+		<if test="stuNo != 0">
+			stuNo_no, 		
+		</if>	
+		guest_nickname, board_title, board_content, board_category, board_view_count, board_pwd)
+		values
+		(
+		<if test="proNo != 0">
+			#{proNo}, 		
+		</if>
+		<if test="staffNo != 0">
+			#{staffNo}, 		
+		</if>
+		<if test="stuNo != 0">
+			#{stuNo}, 		
+		</if>	
+		  #{guestNickname}, #{title}, #{content}, #{category}, '0', #{pwd})
+	</insert>
+	
+	<insert id="insertImageBoard" parameterType="BoardImage">
+		insert into school_board_images
+		(
+		<if test="name != null">
+		board_image_name,
+		</if>
+		 board_no)
+		values
+		(
+		<if test="name != null">
+		#{name},
+		</if>
+		#{boardNo})
+	</insert>
+	
+	<select id="boardListDetail" parameterType="int" resultType="Board">
+		 SELECT
+	            board_no	as no,
+	            pro_no		as proNo,
+	            staff_no	as staffNo,
+	            stu_no		as stuNo,
+	            guest_nickname	as	guestNickname,
+	            board_title		as	title,
+	            board_content	as	content,
+	            board_create_Date	as createDate,
+	            board_category		as category,
+	            board_view_count	as	viewCount,
+	            board_pwd			as	pwd,
+	            board_pwd_is_input	as pwdIsInput
+	        FROM
+	            school_boards
+	        where 
+	         	board_no = #{value} 
+	</select>
+	
+	<select id="boardListImgDetail" parameterType="int"  resultType="BoardImage">
+		select
+			board_image_no	as no,
+			board_image_name	as name,
+			board_no	as boardNo
+		from
+			school_board_images
+		where
+			board_no = #{value}
+	</select>
+	
+	<!-- 이건희 -->
+	<select id="getFiveBoardByProNo" parameterType="int" resultType="Board">
+		select
+			board_title			title,
+			board_content		content,
+			board_view_count	viewCount
+		from school_boards
+		where pro_no = #{value}
+		order by board_create_date desc
+		limit 5
+	</select>
+	
+	<!-- 다시 서 -->
+	<select id="getBoardReplies" parameterType="int" resultType="BoardReplie">
+		SELECT
+			board_reply_no as no,
+			board_no as boardNo,
+			board_reply_content as content,
+			board_reply_create_date as createDate,
+			board_reply_nickname as boardNickName,
+			board_reply_password as boardPassword
+		from
+			school_board_replies
+		where
+			board_no = #{value}
+		
+	</select>
+	
+	<select id="getBoardRepliesCount" resultType="int">
+		Select
+			count(*)
+		from
+			school_board_replies
+	</select>
+	
+	<insert id="insertBoardReply" parameterType="BoardReplie">
+		insert into school_board_replies
+		(board_no, board_reply_content, board_reply_nickname, board_reply_password)
+		values
+		(#{boardNo}, #{content}, #{boardNickName}, #{boardPassword})
+	</insert>
+	
+	<update id="updateBoardReply" parameterType="BoardReplie">
+		update school_board_replies
+		set
+		  board_reply_content = #{content}
+		where
+		  board_reply_password = #{boardPassword}
+		and
+		  board_reply_no = #{no}
+	</update>
+	
+	<delete id="deleteBoardReply" parameterType="BoardReplie">
+		delete from school_board_replies 
+		where 
+		board_reply_password = #{boardPassword}
+		and 
+		board_reply_no = #{no}
+	</delete>
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+
+</mapper>

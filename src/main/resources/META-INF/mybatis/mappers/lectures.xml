@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureDao">
+	
+	<select id="getLectureTimeByProNo" parameterType="map" resultType="LectureListDto">
+		select
+			B.subject_name					subjectName,
+			A.lect_place					lectPlace,
+			A.lect_room						lectureRoom,
+			C.lect_period1					firstPeriod,
+			ifnull(C.lect_period2, '')		secondPeriod,
+			ifnull(C.lect_period3, '')		thirdPeriod,
+			year(A.lect_create_date) 		lectureCreateDate,
+			A.lect_semester 				lectSemester
+		from school_lectures A, school_subjects B, school_lecture_time C 
+		where A.subject_no = B.subject_no
+			and A.lect_no = C.lect_no
+			and A.lect_status in ('진행중', '휴강중')
+			and year(A.lect_create_date) = year(now())
+			and A.lect_semester = ceil(month(now())/6)
+			and A.pro_no = #{proNo}
+			and C.lect_day = #{lectDay}
+		order by C.lect_period1 asc
+	<!-- 
+		select
+			C.lect_day lectureDay,
+			group_concat(B.subject_name, ' ',A.lect_place, ' ',A.lect_room,'호 ',C.lect_period1,ifnull(C.lect_period2, ''),ifnull(C.lect_period3, ''), '교시') time,
+			year(A.lect_create_date) lectureCreateDate,
+			A.lect_semester lectSemester
+		from school_lectures A, school_subjects B, school_lecture_time C 
+		where A.subject_no = B.subject_no
+			and A.lect_no = C.lect_no
+			and A.lect_status in ('진행중', '휴강중')
+			and year(A.lect_create_date) = year(now())
+			and A.lect_semester = ceil(month(now())/6)
+			and A.pro_no = #{value}
+		group by C.lect_day
+		order by C.lect_period1 asc
+	 -->
+	</select>
+	
+	<select id="getLectureAndTestByStatusAndDate" resultType="Lecture">
+		select
+			A.lect_no		no,
+			A.lect_status	status
+		from school_lectures A, school_test_informations B 
+		where A.lect_no = B.lect_no
+			and B.test_enddate &lt; now()
+			and A.lect_status in ('진행중', '휴강중')
+	</select>
+	
+	
+	<select id="getLectureAndCancelStartByStatusAndDate" resultType="LectureandCancelDto">
+		select 
+			A.lect_no					lectNo,
+			A.pro_no					proNo,
+			A.lect_create_date			lectCreateDate,
+			A.lect_status				lectStatus,
+			B.lect_cancell_no			cacellNo,
+			B.lect_cancell_start_date	calcellStartDate,
+			B.lect_cancell_end_date		calcellEndDate
+		from school_lectures A, school_lecture_cancells B 
+		where A.lect_no = B.lect_no
+			and A.lect_status = '진행중'
+			and B.lect_cancell_ischeck = 'uncheck'
+			and B.lect_cancell_start_date &lt; now()
+			and B.lect_cancell_end_date >= now()
+	</select>
+	
+	<select id="getLectureAndCancelEndByStatusAndDate" resultType="LectureandCancelDto">
+		select 
+			A.lect_no					lectNo,
+			A.pro_no					proNo,
+			A.lect_create_date			lectCreateDate,
+			A.lect_status				lectStatus,
+			B.lect_cancell_no			cacellNo,
+			B.lect_cancell_start_date	calcellStartDate,
+			B.lect_cancell_end_date		calcellEndDate
+		from school_lectures A, school_lecture_cancells B 
+		where A.lect_no = B.lect_no
+			and A.lect_status = '휴강중'
+			and B.lect_cancell_ischeck = 'uncheck'
+			and B.lect_cancell_end_date &lt; now()
+	</select>
+	
+ 	<select id="getLectureByStatusAndDate" resultType="Lecture">
+ 		select 
+			lect_no				no,		
+	 		subject_no			subjectNo,
+	 		pro_no				proNo,
+	 		lect_create_date	createDate,
+	 		lect_total_number	totalNumber,
+	 		lect_semester		semester,
+	 		lect_room			room,
+	 		lect_place			place,
+	 		lect_status			status
+		from school_lectures 
+		where 
+			lect_status = '허용'
+			and lect_create_date &lt; now()
+ 	</select>
+
+	<update id="updateLecture" parameterType="Lecture">
+		update
+			school_lectures 
+		set	
+			lect_status = #{status}
+		where
+			lect_no = #{no}
+	</update>
+
+	 
+	<insert id="insertLecture" parameterType="Lecture" useGeneratedKeys="true" keyProperty="no">
+		insert into school_lectures (subject_no, pro_no, lect_create_date, lect_semester, lect_room, lect_place)
+		values (#{subjectNo}, #{proNo}, #{createDate}, #{semester}, #{room}, #{place})
+	</insert>
+	 
+	  <delete id="deleteLectureByNo" parameterType="int">
+	  	delete from school_lectures
+	 	where lect_no = #{value}
+	 </delete>
+	 
+	 <select id="getCountLectureapplyByProNo" parameterType="int" resultType="int">
+        select
+	            count(*)
+	    from school_subjects A, school_lectures B, school_departments D
+		where
+			A.subject_no = B.subject_no
+			and A.dept_no = D.dept_no
+			and B.pro_no = #{proNo}
+	</select>
+	 
+	<!-- 강의개설신청목록 전부다  -->
+	<select id="getAllLectureapplyByProNo" parameterType="map" resultType="LectureListDto" >
+		select
+			A.subject_name				subjectName,
+			A.subject_credit			subjectCredit,
+			A.subject_major				subjectMajor,
+			A.subject_object			subjectObject,
+			A.subject_target_year		targetYear,
+			B.lect_room					lectureRoom,
+			B.lect_place				lectPlace,
+			B.lect_total_number			lectureTotalNumber,
+			B.lect_create_date			lectureCreateDate,
+			B.pro_no					proNo,
+			D.dept_name					deptName,
+			B.lect_no					lectNo,
+			B.lect_semester				lectSemester,
+			B.lect_status				lectStatus,
+			(SELECT GROUP_CONCAT(lect_day, " " , lect_period1, ifnull(lect_period2, '') , ifnull(lect_period3, ''), "교시")   
+			FROM school_lecture_time Z 
+			where Z.lect_no = B.lect_no
+			 ) time  
+		from school_subjects A, school_lectures B, school_departments D
+		where
+			A.subject_no = B.subject_no
+			and A.dept_no = D.dept_no
+			and B.pro_no = #{proNo}
+		order by B.lect_no desc
+		LIMIT #{pageStart}, #{perPageNum}
+	</select>
+	  
+	 <select id="getAllLectureByProNo" parameterType="int" resultType="Lecture">
+	 	select
+	 		lect_no				no,		
+	 		subject_no			subjectNo,
+	 		pro_no				proNo,
+	 		lect_create_date	createDate,
+	 		lect_total_number	totalNumber,
+	 		lect_semester		semester,
+	 		lect_room			room,
+	 		lect_place			place,
+	 		lect_status			status
+	 	
+	 	from
+	 		school_lectures
+	 	where	
+	 		pro_no = #{value}
+	 </select>    	        
+	 
+	 <select id="getAllProcessingLectures" parameterType="int" resultType="Lecture">
+	 	select
+	 		lect_no				no,		
+	 		subject_no			subjectNo,
+	 		pro_no				proNo,
+	 		lect_create_date	createDate,
+	 		lect_total_number	totalNumber,
+	 		lect_semester		semester,
+	 		lect_room			room,
+	 		lect_place			place,
+	 		lect_status			status
+	 	
+	 	from
+	 		school_lectures
+	 	where	
+	 		pro_no = #{value}
+	 	and
+	 		lect_status	= '진행중'
+	 </select>
+	        
+	<!-- 강의 상태 진행중, 휴강중 ,종료 교수번호 받기,  끝  -->
+
+	<select id="getAllLectureBycri" parameterType="map" resultType="LectureListDto" >
+		select
+			A.subject_name				subjectName,
+			A.subject_credit			subjectCredit,
+			A.subject_major				subjectMajor,
+			A.subject_object			subjectObject,
+			A.subject_target_year		targetYear,
+			B.lect_room					lectureRoom,
+			B.lect_place				lectPlace,
+			B.lect_total_number			lectureTotalNumber,
+			B.lect_create_date			lectureCreateDate,
+			B.pro_no					proNo,
+			D.dept_name					deptName,
+			B.lect_no					lectNo,
+			B.lect_semester				lectSemester,
+			B.lect_status				lectStatus
+		from school_subjects A, school_lectures B, school_departments D
+		where
+			A.subject_no = B.subject_no
+			and A.dept_no = D.dept_no
+			and B.lect_status in ('진행중', '휴강중')     
+			<if test="year != null">
+				and year(B.lect_create_date) = #{year}
+			</if>				
+			<if test="semester != null and semester != 0">
+				and B.lect_semester = #{semester}
+			</if>
+			<if test="proNo != 0">
+				and B.pro_no = #{proNo}			  
+			</if>		
+		order by B.lect_create_date desc
+		
+	</select>
+	
+	<select id="getStudentLectureListByLectNo" parameterType="int" resultType="LectureListDto">
+		select
+			D.dept_name				deptName,
+			E.stu_name				stuName,
+			E.stu_id				stuId,
+			E.stu_grade				stuGrade,
+			E.stu_phone				stuPhone,
+			E.stu_email				stuEmail
+		from school_departments D, school_student_lecture_list C, school_students E 
+		where
+			C.stu_no = E.stu_no
+			and E.dept_no = D.dept_no
+			and C.lect_no = #{value}
+	</select>
+			
+	<select id="getLectureByLectNo"  resultType="LectureListDto" parameterType="int">
+		 select 
+				A.subject_name				subjectName,
+				A.subject_credit			subjectCredit,
+				B.lect_room					lectureRoom,
+				B.lect_total_number			lectureTotalNumber,
+				C.dept_name					deptName,
+				A.subject_target_year		targetYear,
+				A.subject_object			subjectObject,
+				A.subject_major				subjectMajor,
+				B.lect_no					lectNo,
+				B.lect_place				lectPlace,
+				(SELECT GROUP_CONCAT(lect_day, " " , lect_period1, ifnull(lect_period2, '') , ifnull(lect_period3, ''), "교시")   
+				FROM school_lecture_time Z 
+				where Z.lect_no = B.lect_no
+				 ) time  
+			from school_subjects A, school_lectures B,  school_departments C 
+			where
+				A.subject_no = B.subject_no
+				and A.dept_no = C.dept_no
+				and B.lect_no = #{value}
+	</select>
+	
+	<select id="getLectureByNo" parameterType="int" resultType="Lecture">
+		select
+			lect_no				no,		
+			subject_no			subjectNo,
+			pro_no				proNo,
+			lect_create_date	createDate,
+			lect_total_number	totalNumber,	
+			lect_semester		semester,
+			lect_room			room,
+			lect_place			place,
+			lect_status			status
+			
+		from
+			school_lectures
+		where
+			lect_no = #{value}
+	</select>
+	
+	<select id="allowLectureList" resultType="LectureListDto">
+		select 
+				B.lect_create_date			lectureCreateDate,
+			 	B.lect_semester				lectSemester,
+				A.subject_name				subjectName,
+				A.subject_credit			subjectCredit,
+				B.lect_room					lectureRoom,
+				B.lect_total_number			lectureTotalNumber,
+				C.dept_name					deptName,
+				A.subject_target_year		targetYear,
+				A.subject_object			subjectObject,
+				A.subject_major				subjectMajor,
+				B.lect_no					lectNo,
+				B.lect_place				lectPlace,
+				(SELECT GROUP_CONCAT(lect_day, " " , lect_period1, ifnull(lect_period2, '') , ifnull(lect_period3, ''), "교시")   
+				FROM school_lecture_time Z 
+				where Z.lect_no = B.lect_no
+				 ) time  
+			from school_subjects A, school_lectures B,  school_departments C 
+			where
+				A.subject_no = B.subject_no
+				and A.dept_no = C.dept_no
+				and B.lect_status='신청'
+	</select>
+	
+	<update id="updateAllowLecture" parameterType="Lecture">
+		update school_lectures
+		set
+			lect_status = #{status}
+		where
+			lect_no = #{no}
+	</update>
+	
+	<select id="getLectureDayByProNo" parameterType="map" resultType="LectureListDto">
+		 select distinct 
+		 	A.lect_no		lectNo,
+		 	C.subject_name	subjectName,
+		 	(SELECT GROUP_CONCAT(lect_day, " " , lect_period1, ifnull(lect_period2, '') , ifnull(lect_period3, ''), "교시")   
+				FROM school_lecture_time Z 
+				where Z.lect_no = B.lect_no
+			 ) time  
+		 from school_lectures A, school_lecture_time B, school_subjects C 
+		 where B.lect_no = A.lect_no
+		 and A.subject_no = C.subject_no
+		 and A.lect_status = '진행중'
+		 and A.pro_no = #{proNo}
+		 and (
+		 <if test="day0 != null" >
+			 B.lect_day = #{day0}		 
+		 </if>
+		 <if test="day1 != null" >
+			 or B.lect_day = #{day1}		 
+		 </if>
+		 <if test="day2 != null" >
+			 or B.lect_day = #{day2}		 
+		 </if>
+		 )
+	</select>
+	
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.TuitionHistoryDao">
+
+
+<insert id="InsertTuitionHistory" parameterType="TuitionHistory">
+	insert into 
+		school_tuition_histories
+		(tuition_no, stu_no, tuition_history_date, tuition_history_pay_way)
+	values
+		(#{tuitionNo},#{stuNo},now(),#{payWay})
+</insert>
+
+
+<select id="isPayHisDuplicate" parameterType="int" resultType="TuitionHistory">
+	select 
+		D.tuition_no					tuitionNo, 
+		D.stu_no						stuNo, 		
+		D.tuition_history_date			date, 
+		D.tuition_history_pay_way		payWay
+	from
+		school_students A, school_departments B, school_tuitions C, school_tuition_histories D
+	where
+		A.dept_no = B.dept_no
+	AND	
+		B.dept_no = C.dept_no
+	and 
+		C.tuition_no = D.tuition_no
+	and 
+		now() BETWEEN C.tuition_pay_start_date AND C.tuition_pay_end_date
+	and
+		A.stu_no = #{value}
+	and
+		D.stu_no = #{value}		
+</select>
+
+<select id="getTuitionPayHistoryList" parameterType="map" resultType="TuitionHisDto">
+	select
+		B.tuition_year									year,
+		DATE_FORMAT(A.tuition_history_date, '%Y-%m-%d') dateToDate,
+		A.tuition_history_pay_way 						payWay,
+		C.dept_name										deptName,
+		B.dept_no										deptNo,	
+		B.tuition_quarter								quarter,
+		B.tuition_price									price
+	from
+		school_tuition_histories A, school_tuitions B, school_departments C
+	where
+		B.tuition_no = A.tuition_no
+	and
+		A.stu_no = #{stuNo}
+	<if test="!year.equals('전체')">
+	and 
+		B.tuition_year = #{year}
+	</if>
+	<if test="!quarter.equals('전체')">
+	and 
+		B.tuition_quarter = #{quarter}
+	</if>
+	and 
+		B.dept_no = C.dept_no 
+</select>
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+	
+	<mvc:annotation-driven />
+	
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**"/>
+			<mvc:exclude-mapping path="/home.hta"/>
+			<mvc:exclude-mapping path="/loginform.hta"/>
+			<mvc:exclude-mapping path="/login.hta"/>
+			<mvc:exclude-mapping path="/student/dayCheck.hta"/>
+			<bean class="kr.ac.twoportal.web.interceptor.LoginCheckInterCepter"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
+	<!-- 우선순위를 빈네임뷰리졸브로 설정하여 먼저 찾게 함  -->
+	<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" >
+		<property name="order" value="1"></property>
+	</bean>
+	
+	<mvc:view-resolvers order="2">
+		<mvc:jsp prefix="/WEB-INF/views/" suffix=".jsp"/>
+	</mvc:view-resolvers>
+	
+	<context:component-scan base-package="kr.ac.twoportal.web"></context:component-scan>
+	
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+	 	<property name="defaultEncoding" value="UTF-8"></property>
+	 	<property name="maxUploadSize" value="5242880" /><!-- 5MB -->
+	 </bean>
+	
+	 <!-- 사용자정의 View를 스프링의 빈으로 등록하기 -->
+	 <bean id="fileDownloadView" class="kr.ac.twoportal.web.view.FileDownloadView"></bean>
+	 <bean id="gradeXlsView" class="kr.ac.twoportal.web.view.GradeXlsView"></bean>
+	 
+	<context:property-placeholder location="classpath:/META-INF/config/application-config.properties"/>
+	 
+</beans>

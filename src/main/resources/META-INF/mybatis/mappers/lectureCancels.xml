@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureCancelDao">
+	
+	<insert id="insertLectureCancel" parameterType="LectureCancel">
+		insert into school_lecture_cancells 
+			(pro_no, lect_no, lect_cancell_reason, lect_cancell_req_date, lect_cancell_start_date, lect_cancell_end_date)
+		values (#{proNo}, #{lectNo}, #{reason}, now(), #{startDate}, #{endDate})
+	</insert>
+	
+	<update id="updateLectureCancel" parameterType="LectureCancel">
+		update school_lecture_cancells
+		set
+			lect_cancell_ischeck = #{isCheck},
+			lect_cancell_resp_date = #{respDate}
+		where lect_cancell_no = #{no}
+	</update>
+	
+	<delete id="deleteLectureCancel" parameterType="int">
+		delete from school_lecture_cancells
+		where lect_cancell_no = #{value}
+	</delete>
+	
+	<select id="getLectureCancelByNo" parameterType="int" resultType="LectureCancel">
+		select
+			lect_cancell_no				no,
+			pro_no						proNo,
+			lect_no						lectNo,
+			lect_cancell_reason			reason,
+			lect_cancell_req_date		reqDate,
+			lect_cancell_resp_date		respDate,
+			lect_cancell_start_date		startDate,
+			lect_cancell_end_date		endDate,
+			lect_cancell_ischeck		isCheck
+		from
+			school_lecture_cancells
+		where
+			lect_cancell_no = #{value}	
+	</select>
+	
+	<select id="getLectureCancelByProNo" parameterType="int" resultType="LectureandCancelDto">
+		select
+			B.lect_cancell_req_date			cancellReqDate,
+			D.subject_name					subName,
+			B.lect_cancell_reason			cancellReason,
+			B.lect_cancell_start_date		calcellStartDate,
+			B.lect_cancell_end_date			calcellEndDate,
+			B.lect_cancell_resp_date		cancellRespDate,
+			B.lect_cancell_no				cacellNo
+		from school_professors A, school_lecture_cancells B, school_lectures C, school_subjects D 
+		where A.pro_no = B.pro_no
+			and B.lect_no = C.lect_no
+			and C.subject_no = D.subject_no
+			and A.pro_no = #{value}
+		order by B.lect_cancell_req_date desc
+	</select>
+	
+	<select id="getLectureCancelwhereRespNull" resultType="LectureandCancelDto">
+		select
+			B.lect_cancell_req_date			cancellReqDate,
+			D.subject_name					subName,
+			B.lect_cancell_reason			cancellReason,
+			B.lect_cancell_start_date		calcellStartDate,
+			B.lect_cancell_end_date			calcellEndDate,
+			B.lect_cancell_resp_date		cancellRespDate,
+			B.lect_cancell_no				cacellNo,
+			A.pro_name						proName
+		from school_professors A, school_lecture_cancells B, school_lectures C, school_subjects D 
+		where A.pro_no = B.pro_no
+			and B.lect_no = C.lect_no
+			and C.subject_no = D.subject_no
+			and B.lect_cancell_resp_date is null
+		order by B.lect_cancell_req_date desc
+	</select>
+	
+</mapper>

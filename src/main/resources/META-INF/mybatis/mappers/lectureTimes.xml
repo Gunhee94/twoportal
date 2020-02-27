@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureTimeDao">
+
+	<delete id="deleteLectureByLectNo" parameterType="int">
+		delete from school_lecture_time
+		where lect_no = #{value}
+	</delete>
+
+	<insert id="insertLectureTime" parameterType="LectureTime" useGeneratedKeys="true" keyProperty="no">
+		insert into school_lecture_time (
+			<if test="firstPeriod != 0">				
+				lect_period1, 
+			</if>
+			<if test="secondPeriod != 0">
+				lect_period2,
+			</if>
+			<if test="thirdPeriod != 0">
+				lect_period3,
+			</if>
+			lect_no, lect_day)
+		values (
+			<if test="firstPeriod != 0">
+				#{firstPeriod},
+			</if>
+			<if test="secondPeriod != 0">
+				#{secondPeriod},
+			</if>
+			<if test="thirdPeriod != 0">
+				#{thirdPeriod},
+			</if>
+			#{lectNo}, #{day})
+	</insert>
+
+	<select id="getLectureTimeOnlyOne" parameterType="map" resultType="LectureTime">
+		select
+			lect_time_no	 	no,
+			lect_no				lectNo,
+			lect_day			day,
+			lect_period1		firstPeriod,
+			lect_period2		secondPeriod,
+			lect_period3		thirdPeriod
+		from
+			school_lecture_time
+		where
+			(lect_no = #{lectNo} and lect_day = #{today}) 
+		and
+			(lect_period1 = #{periodTime} OR lect_period2 = #{periodTime} OR lect_period3 = #{periodTime})
+	</select>
+	
+	<select id="getLectureByPlaceandRoom" parameterType="map" resultType="LectureTime">
+		select
+			lect_time_no		no,
+			lect_no				lectNo,
+			lect_day			day,
+			lect_period1		firstPeriod,
+			lect_period2		secondPeriod,
+			lect_period3		thirdPeriod
+		from school_lecture_time B
+		where lect_no = (select lect_no
+						from school_lectures A
+						where
+							lect_status in ('신청', '허용', '진행중', '휴강중')
+							and B.lect_no = A.lect_no
+						<if test="place != null">
+							and lect_place = #{place}
+						</if>
+						<if test="room != null">
+							and lect_room = #{room}
+						</if>
+						)
+			<if test="day != null">
+				and lect_day = #{day}
+			</if>
+	</select>
+</mapper>

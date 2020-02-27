@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.SalaryDao">
+
+	<select id="getSalaryByProNo" parameterType="int" resultType="SalaryProfessorDto">
+		select
+			A.salary				salary,
+			A.salary_payment_date	salaryPaymentDate,
+			B.pro_name 				proName
+		from school_salarys A, school_professors B 
+		where
+			A.pro_no = #{value}
+			and A.pro_no = B.pro_no
+			and year(A.salary_payment_date) = 2020
+		order by A.salary_payment_date asc
+	</select>
+	
+	<select id="getAvgSalaryByProNo" parameterType="int" resultType="SalaryProfessorDto">
+		select
+			avg(A.salary)	avg,
+			B.pro_name		proName
+		from school_salarys A, school_professors B 
+		where
+			A.pro_no = #{value}
+			and A.pro_no = B.pro_no
+			and year(A.salary_payment_date) = 2019
+			group by A.pro_no
+		order by A.salary_payment_date asc
+	</select>
+	
+	<select id="getSalaryByMap" parameterType="map" resultType="Salary">
+		select
+			salary_no				no,
+			salary_checked			checked,
+			salary					salary,
+			pro_no					proNo,
+			staff_no				staffNo,
+			salary_payment_date		salaryPaymentDate
+		from school_salarys
+		where pro_no = #{proNo}
+		<if test="year != null">
+			and year(salary_payment_date) = #{year}
+		</if>
+		order by salary_payment_date asc
+	</select>
+	
+	<select id="salaryInfo" resultType="SalaryInfoDto">
+		select 
+			A.salary_no as no,
+			A.salary_checked as checked,
+			A.salary as salary,
+			B.pro_name as proName,
+			B.pro_bank_name as bankName,
+			B.pro_account_number as accountNumber,
+			A.salary_payment_date as paymentDate,
+			c.dept_name as deptName
+			
+		FROM
+			school_salarys A, school_professors B, school_departments C
+		WHERE
+		    A.pro_no = B.pro_no
+		 AND
+		 	B.dept_no = C.dept_no
+	</select>
+</mapper>

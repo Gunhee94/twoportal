@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.1.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- Connection Pool 스프링 빈으로 등록 -->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.SimpleDriverDataSource">
+		<property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+
+		<property name="url" value="jdbc:mysql://192.168.10.63:3306/jhta_school?useSSL=false&amp;characterEncoding=UTF-8&amp;serverTimezone=Asia/Seoul"></property>  
+   		<!-- <property name="url" value="jdbc:mysql://localhost/jhta_school?useSSL=false&amp;characterEncoding=UTF-8&amp;serverTimezone=Asia/Seoul"></property>  -->
+
+		<property name="username" value="twoportal"></property>
+		<property name="password" value="zxcv1234"></property>
+	</bean>
+
+	<!-- 트랜잭션 매니저 스프링 빈으로 등록
+		트랜잭션 동기화 저장소, mybatis 과 커넥션 사이에 , 동기화가 있음
+		커넥션풀에서 1커넥션이 동기화저장소로 이사감,
+		mybatis 는 이사간 1커넥션에서 사용 하고 반납함,
+		중간에 excetpion 이 발생하면 동기화저장소에서 롤백됨,
+		커밋 또는 롤백이 되면 커넥션풀로 돌아감 
+		선언적 트랜잭션 처리 
+	 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+
+	<!--
+		어노테이션 주도방식으로 트랜잭션 처리, 매니저가지고 할거다 
+		트랜잭션 처리가 필요한 곳에 @Transactional 어노테이션을 부착하면
+		스프링이 트랜잭션처리를 자동으로 수행한다.
+	 -->
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+
+	<!-- mybatis 핵심객체 스프링 빈으로 등록 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:/META-INF/mybatis/mybatis-config.xml"></property>
+		<property name="mapperLocations" value="classpath:/META-INF/mybatis/mappers/*.xml"></property>
+	</bean>
+	
+	<!--
+		Dao 인터페이스를 스캔해서 Dao 구현객체를 생성하고, 스프링의 빈으로 등록시키는 
+		MapperScannerConfigurer 객체 스프링 빈으로 등록
+	 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="kr.ac.twoportal.dao"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+	
+	<!--
+		의존성 주입관련 어노테이션을 감지하고, 적절한 처리를 수행하는 스프링의
+		xxxAnnotationProcessor 객체 스프링 빈으로 등록
+	 -->
+	<context:annotation-config/>
+	
+	<!--
+		지정된 패키지에서 @Service 가 부착된 클래스를 스프링의 빈으로 등록
+		xxxServiceImpl 들이 빈으로 등록된다.
+	 -->
+	<context:component-scan base-package="kr.ac.twoportal.service"></context:component-scan>
+	<context:component-scan base-package="kr.ac.twoportal.job"></context:component-scan>
+	
+	<!-- mailSender 빈을 설정 -->
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"> 
+		<property name="host" value="smtp.gmail.com"/> 
+		<property name="port" value="587" />
+		<property name="username" value="hong78436@gmail.com"/>
+		<property name="password" value="qwer1234z"/>
+		<property name="javaMailProperties"> 
+		   <props> 
+		   	<prop key="mail.smtp.auth">true</prop> 
+		   	<prop key="mail.smtp.starttls.enable">true</prop>
+		   </props> 
+		</property>
+
+	</bean>
+	
+	<task:scheduler id="scheduler" pool-size="10"/>
+	<task:annotation-driven scheduler="scheduler"/>	
+
+
+	<bean id="dayCheckWebSocket" class="kr.ac.twoportal.web.advice.DayCheckSocketAdvice"></bean>
+	
+	<websocket:handlers>
+		<websocket:mapping handler="dayCheckWebSocket" path="/dayCheckWebSocket.hta"/>
+	</websocket:handlers>
+	
+	 <!-- 시스템 환경 설정정보를 읽어서 빈으로 등록 -->
+	 <context:property-placeholder location="classpath:/META-INF/config/application-config.properties"/>
+	 
+</beans>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.SubjectDao">
+	
+	<select id="getSubjectNameBymap" parameterType="map" resultType="Subject">
+		select 
+			C.subject_name	name
+		from school_lectures A, school_lecture_time B, school_subjects C 
+		where A.lect_no = B.lect_no
+			and A.subject_no = C.subject_no
+			and A.pro_no = #{proNo}
+			and B.lect_day = #{lectDay}
+			and A.lect_status in ('진행중', '휴강중')
+		order by B.lect_period1 asc
+	</select>
+	
+	<select id="getSubjectByNo" parameterType="int" resultType="Subject">
+		select
+			subject_no				no,	
+			dept_no					deptNo,
+			subject_name			name,
+			subject_credit			credit,
+			subject_major			major,
+			subject_object			object,
+			subject_target_year		targetYear
+		from
+			school_subjects
+		where
+			subject_no = #{value}
+	</select>
+	
+	<insert id="insertSubject" parameterType="Subject" useGeneratedKeys="true" keyProperty="no">
+		insert into school_subjects (dept_no, subject_name, subject_credit, subject_major, subject_object, subject_target_year)
+		values (#{deptNo}, #{name}, #{credit}, #{major}, #{object}, #{targetYear})
+	</insert>
+	
+	<delete id="deleteSubjectBySubNo" parameterType="int">
+		delete from school_subjects
+		where subject_no = #{value}
+	</delete>
+	
+	<select id="getSubjectBydeptNo" parameterType="int" resultType="Subject">
+		select 
+			B.subject_no		no,
+			B.subject_name		name
+		from school_lectures A, school_subjects B, school_departments C 
+		where A.subject_no = B.subject_no
+			and B.dept_no = C.dept_no
+			and C.dept_no = #{value}
+			and A.lect_status = '종료'
+		order by C.dept_no asc
+	</select>
+	
+	<select id="getFiveLectureByProNo" parameterType="int" resultType="LectureListDto">
+		select 
+			B.subject_name		subjectName,
+			B.subject_object	subjectObject,
+			C.dept_name			deptName,
+			B.subject_credit	subjectCredit,
+			B.subject_major		subjectMajor
+		from school_lectures A, school_subjects B, school_departments C 
+		where A.subject_no = B.subject_no
+			and B.dept_no = C.dept_no
+			and A.lect_status in ('진행중', '휴강중')
+			and year(A.lect_create_date) = year(now())
+			and A.lect_semester = ceil(month(now())/6)
+			and A.pro_no = #{value}
+		order by A.lect_create_date desc
+		limit 5
+	</select>
+	
+</mapper>

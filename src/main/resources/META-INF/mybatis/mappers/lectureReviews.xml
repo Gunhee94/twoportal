@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureReviewDao">
+
+	<select id="getLectureReviewGroupStuByLectNo" parameterType="int" resultType="LectureReviewDto">
+		select 
+			B.stu_no						stuNo,
+			D.stu_id						stuId,
+			E.subject_name					subName,
+			D.stu_name						stuName,
+			D.stu_phone						stuPhone,
+			D.stu_email						stuEmail,
+			D.stu_grade						stuGrade,
+			F.dept_name						stuDeptName,
+			C.lect_review_total_score		stuTotal,
+			A.lect_no						lectNo,
+			A.lect_create_date				lectCreatedate,
+			A.lect_semester					lectSemester,
+			nullif(B.lecture_list_no, (select Z.lecture_list_no 
+											from school_lecture_reviews Z, school_student_lecture_list X
+											where Z.lecture_list_no = X.lecture_list_no
+											and Z.lecture_list_no = B.lecture_list_no )) iscompleted,
+										(select	avg(T.lect_review_total_score)
+											from school_lecture_reviews T,  school_student_lecture_list L
+											where T.lecture_list_no = L.lecture_list_no
+											and L.lect_no = A.lect_no
+											group by L.lect_no
+											 ) lectavg 		 
+		from school_lectures A, school_students D, school_subjects E, school_departments F, school_student_lecture_list B
+		left join school_lecture_reviews C on B.lecture_list_no = C.lecture_list_no
+		where 
+			A.lect_no = B.lect_no
+			and D.stu_no = B.stu_no
+			and A.subject_no = E.subject_no
+			and D.dept_no = F.dept_no
+			and A.lect_no = #{values}
+	</select>
+
+	<select id="getSubjectandLectureBymap" parameterType="map" resultType="LectureReviewDto">
+		select 
+			A.subject_name			subName,
+			A.subject_major			subMajor,
+			A.subject_credit		subCredit,
+			B.lect_create_date		lectCreatedate,
+			B.lect_semester			lectSemester,
+			B.lect_total_number		lectTotalNumber,
+			B.lect_no				lectNo,
+			(select	avg(T.lect_review_total_score)
+					from school_lecture_reviews T,  school_student_lecture_list L
+					where T.lecture_list_no = L.lecture_list_no
+					and L.lect_no = B.lect_no
+					group by L.lect_no
+					 ) lectavg 
+		from school_subjects A, school_lectures B
+		where 
+			A.subject_no = B.subject_no
+			and B.lect_status = '종료'
+			<if test="year != null">
+				and year(B.lect_create_date) = #{year}
+			</if>				
+			<if test="semester != null and semester != 0">
+				and B.lect_semester = #{semester}
+			</if>
+			<if test="proNo != 0">
+				and B.pro_no = #{proNo}			  
+			</if>
+	</select>
+
+	<insert id="insertLectureReview" parameterType="map">
+		insert into school_lecture_reviews (lect_review_total_score, lecture_list_no)
+		values (#{totalScore}, #{listNo})
+	</insert>
+
+	<select id="getLectureIsReviewBymap" parameterType="map" resultType="LectureReviewDto">
+		select 
+			Z.lect_no				lectNo,
+			X.lect_create_date		lectCreatedate,
+			X.lect_semester			lectSemester,
+			Y.pro_name				proName,
+			V.subject_name			subName,
+			F.dept_name				deptName,
+			Z.lecture_list_no		lectListNo,
+				nullif(Z.lect_no, (select 
+									A.lect_no 
+						  			 from school_student_lecture_list A, school_lecture_reviews B 
+					      			 where A.lecture_list_no = B.lecture_list_no 
+					      			 <if test="stuNo != 0">
+										and A.stu_no = #{stuNo}			  
+									</if>	
+					      			 and A.lect_no = Z.lect_no)) iscompleted,
+					      		(select	avg(E.lect_review_total_score)
+									from school_lecture_reviews E,  school_student_lecture_list C
+									where E.lecture_list_no = C.lecture_list_no
+									and C.lect_no = X.lect_no
+									group by C.lect_no
+									 ) lectavg 		 
+		from school_student_lecture_list Z, school_lectures X, school_professors Y, school_subjects V, school_departments F  
+		where 
+			Z.lect_no = X.lect_no 
+			and V.subject_no = X.subject_no
+			and X.pro_no = Y.pro_no 
+			and Y.dept_no = F.dept_no  
+			and X.lect_status = '종료'
+			<if test="year != null">
+				and year(X.lect_create_date) = #{year}
+			</if>				
+			<if test="semester != null and semester != 0">
+				and X.lect_semester = #{semester}
+			</if>
+			<if test="stuNo != 0">
+				and Z.stu_no = #{stuNo}			  
+			</if>		
+	</select>
+	
+	
+	
+</mapper>

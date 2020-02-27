@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.TestQuestionDao">
+	
+	<select id="getTestQuestionsByTestInfoNo" parameterType="int" resultType="TestQuestion">
+		select
+			test_question_no		no,
+			test_question_content	content,
+			test_question_scoring	scoring,
+			test_question1			firstQuestion,
+			test_question2			secondQuestion,
+			test_question3			thirdQuestion,
+			test_question4			forthQuestion,
+			test_question5			fifthQuestion,
+			test_question_answer	answer
+		from
+			school_test_questions
+		where
+			test_info_no = #{value}
+	</select>
+</mapper>

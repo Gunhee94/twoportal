@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.ac.twoportal.dao.LectureDayCheckDao">
+
+	<select id="getDuplicateCheck" parameterType="int" resultType="LectureDayCheck">
+		select 
+			daycheck_no			  	no,	
+			lecture_list_no			listNo,
+			daycheck_create_date	createDate
+		from
+			school_student_daychecks
+		where
+			lecture_list_no = #{value}
+		and
+			DATE_FORMAT(daycheck_create_date, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+	</select>
+
+	<insert id="insertDayCheck" parameterType="int">
+		insert into
+			school_student_daychecks(lecture_list_no)
+		value
+			(#{value})
+	</insert>
+	
+	<select id="getDayCheckByLecListNo" parameterType="int" resultType="LectureDayCheck">
+		select 
+			daycheck_no			  	no,	
+			lecture_list_no			listNo,
+			daycheck_create_date	createDate
+		from
+			school_student_daychecks
+		where
+			lecture_list_no = #{value}
+	</select>
+	
+	<select id="getDayCheckByLecListNoAndToday" parameterType="int" resultType="LectureDayCheck">
+		select 
+			daycheck_no			  	no,	
+			lecture_list_no			listNo,
+			daycheck_create_date	createDate
+		from
+			school_student_daychecks
+		where
+			lecture_list_no = #{value}
+		and
+			DATE_FORMAT(daycheck_create_date, '%Y-%m-%d') = DATE_FORMAT(now(), '%Y-%m-%d')
+	</select>
+	
+	<!-- 한 강의의 총 강의일수와 그 학생의 출석체크일수  -->
+	<select id="getLectureTotaldayAndCountdaycheckByLectNo" parameterType="int" resultType="LectureTotaldayAndDaycheckDto">
+		select
+			A.lecture_list_no	lectureListNo,
+			C.totalday			lectureTotalday,
+			count(*) 			daycheck
+		from school_student_daychecks B, school_student_lecture_list A
+			left join (select Z.lect_no, to_days(X.test_enddate) - to_days(Z.lect_create_date) totalday
+						from school_lectures Z, school_test_informations X 
+						where Z.lect_no = X.lect_no) C on A.lect_no = C.lect_no
+		where A.lecture_list_no = B.lecture_list_no
+		and A.lect_no = #{value}
+		group by B.lecture_list_no
+	</select>
+</mapper>
